@@ -25,9 +25,9 @@ else
 	then
 		for i in $newdir/* ;
 		do
-			if [[ ! -L "$olddir/$i" ]]
+			if [[ ! -L "$olddir/$(basename $i)" ]]
 			then
-				log "$i in $newdir but not symlinked in $olddir: supposing uninstalled app, file will be removed.";
+				log "$i in $newdir but not symlinked in $olddir: file will be removed.";
 				rm $i;
 			fi;
 		done;
