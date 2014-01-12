@@ -1,0 +1,63 @@
+#!/system/bin/sh
+#Move some files from olddir to newdir and symlink them, as long as there is free space
+
+me="dalvik-cache-mover|";
+olddir="/data/dalvik-cache";
+newdir="/preload/dalvik-cache";
+
+log() {
+	echo "$me$*"
+}	
+
+log "$(basename $0) will move files from $olddir to $newdir"
+
+if [[ ! -d $olddir ]];
+then
+	log "$olddir not exists, are you sure you setup the script correctly?"
+else
+	if [[ ! -d $newdir ]];
+	then
+		log "$newdir not existing, will be created"
+		mkdir $newdir;
+	fi;
+
+	if [[ "$(ls $newdir)" ]];
+	then
+		for i in $newdir/* ;
+		do
+			if [[ ! -L "$olddir/$i" ]]
+			then
+				log "$i in $newdir but not symlinked in $olddir: supposing uninstalled app, file will be removed.";
+				rm $i;
+			fi;
+		done;
+	fi;
+
+	if [[ "$(ls $olddir)" ]];
+	then
+		for i in `busybox ls -Sr $olddir/*@app@* $olddir/*@asec@*` ;
+		do
+			if [[ -f $i && ! -L $i ]];
+			then
+				oldfile=$olddir/$(basename $i)
+				newfile=$newdir/$(basename $i)
+				log "Will create symlink for $oldfile in $newfile"
+				cp -p $oldfile $newfile
+				if [[ $? -eq 0 ]];
+				then
+					rm -f $oldfile
+					ln -s $newfile $oldfile
+					log "Done $newfile"
+				else 
+					log "Cannot copy, disk full? Removing partial file and exiting"
+					rm $newfile
+					exit 0
+				fi;				
+			else
+				log "Skipping $i: not a regular file"
+			fi;
+		done;
+	else
+		log "$olddir empty, nothing to move."
+	fi;
+fi;
